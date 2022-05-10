@@ -8,7 +8,7 @@ const mongoose = require('mongoose')
 const app = express()
 
 // db initilize
-const db = require("./Config/db")
+require("./Config/db")
 
 // register middleware
 app.use(express.json())
