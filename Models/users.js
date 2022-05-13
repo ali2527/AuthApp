@@ -1,6 +1,11 @@
 const mongoose = require('mongoose')
-const uuid = require("uuid")
+const bcrypt = require('bcrypt');
 const Schema = mongoose.Schema
+const jwt = require('jsonwebtoken');
+const { token } = require('morgan');
+
+
+const saltRounds = 10;
 
 const userSchema = new Schema({
     firstName: {
@@ -27,7 +32,33 @@ const userSchema = new Schema({
     password: {
         type: String,
         required: true,
-    }
+    },
+    tokens:[
+        {
+            token:{
+                type: String,
+                required: true,
+            }
+        }
+    ]
 }, { timestamps: true })
+
+userSchema.pre('save',async function(next){
+    if(this.isModified("password")){
+        this.password = await bcrypt.hash(this.password,saltRounds)
+    }
+    next();
+})
+
+userSchema.methods.generateToken = async function(){
+    try {
+        let myToken = jwt.sign({_id:this._id}, process.env.SECRET_KEY)
+        this.tokens = this.tokens.concat({token:myToken})
+        await this.save();
+        return myToken;
+    } catch (error) {
+        console.log(error)
+    }
+}
 
 module.exports = mongoose.model("User", userSchema)

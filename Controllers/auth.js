@@ -1,22 +1,27 @@
 const User = require("../Models/users")
 const {apiResponse} = require("../Helpers")
-
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken')
 
 exports.login = async (req, res) => {
 
     try {
         const { email, password } = req.body;
         let userExists = await User.findOne({ email: email })
+
+        let isMatch = await bcrypt.compare(password,userExists.password)
+
+        let token = await userExists.generateToken();
+        console.log(token)
         if (!userExists) {
             return res.status(400).json(apiResponse({}, false, "No Account with This Email Exists"));
-        } else if (password !== userExists.password) {
-            return res.status(400).json(apiResponse({}, false, "Invalid Password"));
+        } else if (!isMatch) {
+            return res.status(400).json(apiResponse({}, false, "Invalid Credentials"));
         }
         return res.status(200).json(apiResponse(userExists, true, "Login Successful"));
     } catch (error) {
         console.log(error)
     }
-    
 }
 
 exports.signup = (req, res) => {
